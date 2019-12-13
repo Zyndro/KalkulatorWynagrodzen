@@ -1,4 +1,5 @@
 import sys
+import scraper
 from PyQt5.QtWidgets import *
 
 
@@ -79,6 +80,9 @@ class App(QMainWindow):
         list=[]
         for x in range(self.listwidget.count()):
             list.append(float(self.listwidget.item(x).text()))
+        for l in list:
+            self.listwidget2.insertItem(0, scraper.netto(l))
+
         print(list)
         self.calculated=True
 
