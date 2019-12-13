@@ -1,6 +1,8 @@
 import sys
 from PyQt5.QtWidgets import *
 
+
+
 class App(QMainWindow):
 
     def __init__(self):
@@ -10,8 +12,9 @@ class App(QMainWindow):
         self.top = 300
         self.width = 300
         self.height = 400
+        self.calculated = False
         self.initUI()
-
+        self.show()
 
 
     def initUI(self):
@@ -22,9 +25,21 @@ class App(QMainWindow):
         self.label = QLabel("Podaj kwotę brutto:", self)
         self.label.setGeometry(40,10,200,15)  # (x, y, width, height)
 
-        #list
+        #labelbrutto
+        self.label1 = QLabel("Kwota brutto", self)
+        self.label1.setGeometry(40, 115, 200, 15)  # (x, y, width, height)
+
+        #labelnetto
+        self.label2 = QLabel("Kwota netto", self)
+        self.label2.setGeometry(145, 115, 200, 15)  # (x, y, width, height)
+
+        #lista brutto
         self.listwidget = QListWidget(self)
-        self.listwidget.setGeometry(40, 150, 200, 200)  # (x, y, width, height)
+        self.listwidget.setGeometry(40, 130, 100, 200)  # (x, y, width, height)
+
+        #lista netto
+        self.listwidget2 = QListWidget(self)
+        self.listwidget2.setGeometry(145, 130, 100, 200)  # (x, y, width, height)
 
 
         #inputbox
@@ -41,20 +56,56 @@ class App(QMainWindow):
         self.button1 = QPushButton('Pokaz netto', self)
         self.button1.move(150, 60)
         self.button1.clicked.connect(self.on_click_calculate)
-        self.show()
+
+        # button3
+        self.button3 = QPushButton('Pokaz wykres', self)
+        self.button3.move(40, 340)
+        self.button3.clicked.connect(self.on_click_graph)
 
 
 
     def on_click_addamount(self):
         textboxValue = self.textbox.text()
-        self.listwidget.insertItem(0,textboxValue)
-        self.textbox.clear()
-
+        try:
+            float(textboxValue)
+            self.listwidget.insertItem(0, textboxValue)
+            self.textbox.clear()
+        except ValueError:
+            QMessageBox.question(self, 'Niepoprawna kwota!', "Wprowadź poprawną kwotę", QMessageBox.Ok,QMessageBox.Ok)
+            self.textbox.clear()
 
 
     def on_click_calculate(self):
-       pass
+        list=[]
+        for x in range(self.listwidget.count()):
+            list.append(float(self.listwidget.item(x).text()))
+        print(list)
+        self.calculated=True
 
+    def on_click_graph(self):
+        if self.calculated == True:
+           self.w = GraphWindow()
+           self.w.show()
+        else:
+            QMessageBox.question(self, 'Brak obliczeń!', "Najpierw oblicz kwoty netto!", QMessageBox.Ok, QMessageBox.Ok)
+
+
+#okno wykresu
+class GraphWindow(App):
+    def __init__(self):
+        super().__init__()
+
+
+    def initUI(self):
+        self.setWindowTitle("wykres")
+        self.setGeometry(600, self.top, 400, 440)
+
+        self.button = QPushButton('zamknij', self)
+        self.button.move(150, 400)
+        self.button.clicked.connect(self.close)
+
+    def close(self):
+        self.hide()
 
 
 if __name__ == '__main__':
