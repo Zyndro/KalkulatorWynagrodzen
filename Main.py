@@ -7,8 +7,10 @@ matplotlib.use('agg')
 from matplotlib.figure import Figure
 
 
-bruttoplot=[0]
-nettoplot=[0]
+bruttoplot = [0]
+nettoplot = [0]
+
+
 class App(QMainWindow):
 
     def __init__(self):
@@ -22,14 +24,12 @@ class App(QMainWindow):
         self.initUI()
         self.show()
 
-
     def initUI(self):
-
         self.setWindowTitle(self.title)
         self.setGeometry(self.left, self.top, self.width, self.height)
 
         #label
-        self.label = QLabel("Podaj kwotę brutto:", self)
+        self.label = QLabel("Podaj kwotę brutto(14zł minimum):", self)
         self.label.setGeometry(40,10,200,15)  # (x, y, width, height)
 
         #labelbrutto
@@ -64,17 +64,20 @@ class App(QMainWindow):
         self.button1.move(150, 60)
         self.button1.clicked.connect(self.on_click_calculate)
 
-        # button3
+        #button3
         self.button3 = QPushButton('Pokaz wykres', self)
         self.button3.move(40, 340)
         self.button3.clicked.connect(self.on_click_graph)
 
-
+        #button4
+        self.button4 = QPushButton('Wyczysc wszystko', self)
+        self.button4.move(140, 340)
+        self.button4.clicked.connect(self.clear_all)
 
     def on_click_addamount(self):
         textboxValue = self.textbox.text()
         try:
-            if textboxValue.startswith("."):
+            if textboxValue.startswith(".") or float(textboxValue) < 14.0:
                 raise(ValueError)
             float(textboxValue)
             bruttoplot.append(float(textboxValue))
@@ -84,18 +87,22 @@ class App(QMainWindow):
             QMessageBox.question(self, 'Niepoprawna kwota!', "Wprowadź poprawną kwotę", QMessageBox.Ok,QMessageBox.Ok)
             self.textbox.clear()
 
-
     def on_click_calculate(self):
         self.listwidget2.clear()
+        print(nettoplot)
+        print(bruttoplot)
         list=[]
-        for x in range(self.listwidget.count()):
-            list.append(float(self.listwidget.item(x).text()))
-        list.reverse()
-        for l in list:
-            temp = scraper.netto(l)
-            nettoplot.append(float(temp))
-            self.listwidget2.insertItem(0, temp)
-        self.calculated=True
+        try:
+            for x in range(self.listwidget.count()):
+                list.append(float(self.listwidget.item(x).text()))
+            list.reverse()
+            for l in list:
+                temp = scraper.netto(l)
+                nettoplot.append(float(temp))
+                self.listwidget2.insertItem(0, temp)
+            self.calculated=True
+        except:
+            QMessageBox.question(self, 'Błąd połączenia', "Sprawdź internet", QMessageBox.Ok, QMessageBox.Ok)
 
     def on_click_graph(self):
         if self.calculated == True:
@@ -104,12 +111,21 @@ class App(QMainWindow):
         else:
             QMessageBox.question(self, 'Brak obliczeń!', "Najpierw oblicz kwoty netto!", QMessageBox.Ok, QMessageBox.Ok)
 
+    def clear_all(self):
+        self.listwidget.clear()
+        self.listwidget2.clear()
+        bruttoplot.clear()
+        bruttoplot.append(0.0)
+        nettoplot.clear()
+        nettoplot.append(0.0)
+        self.calculated=False
+        QMessageBox.question(self, 'Wyczyszczono', "wyczyszczono!", QMessageBox.Ok, QMessageBox.Ok)
+
 
 #okno wykresu
 class GraphWindow(App):
     def __init__(self):
         super().__init__()
-
 
     def initUI(self):
         self.setWindowTitle("wykres")
@@ -118,18 +134,17 @@ class GraphWindow(App):
         self.button = QPushButton('zamknij', self)
         self.button.move(250, 400)
         self.button.clicked.connect(self.close)
-
         m = PlotCanvas(self, width=6, height=4)
         m.move(0, 0)
 
     def close(self):
         self.hide()
 
+
 class PlotCanvas(FigureCanvas):
 
     def __init__(self, parent=None, width=5, height=4, dpi=100):
         fig = Figure(figsize=(width, height), dpi=dpi)
-
 
         FigureCanvas.__init__(self, fig)
         self.setParent(parent)
@@ -139,12 +154,11 @@ class PlotCanvas(FigureCanvas):
                 QSizePolicy.Expanding)
         FigureCanvas.updateGeometry(self)
         self.plot()
+        #siatka na wykresie
         for ax in fig.axes:
             ax.grid(True)
 
-
     def plot(self):
-
         brutto = sorted(bruttoplot, key=float)
         netto = sorted(nettoplot, key=float)
         ax = self.figure.add_subplot(111)
