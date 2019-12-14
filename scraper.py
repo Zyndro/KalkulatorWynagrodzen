@@ -16,7 +16,6 @@ def netto(brutto):
         netto=table[0]
         output = re.findall('\d+', str(netto))
         output1 = "".join(output)
-        print(output1)
 
 
     return(output1)

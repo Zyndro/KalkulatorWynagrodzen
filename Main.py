@@ -1,9 +1,14 @@
 import sys
 import scraper
 from PyQt5.QtWidgets import *
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+import matplotlib
+matplotlib.use('agg')
+from matplotlib.figure import Figure
 
 
-
+bruttoplot=[0]
+nettoplot=[0]
 class App(QMainWindow):
 
     def __init__(self):
@@ -19,6 +24,7 @@ class App(QMainWindow):
 
 
     def initUI(self):
+
         self.setWindowTitle(self.title)
         self.setGeometry(self.left, self.top, self.width, self.height)
 
@@ -68,7 +74,10 @@ class App(QMainWindow):
     def on_click_addamount(self):
         textboxValue = self.textbox.text()
         try:
+            if textboxValue.startswith("."):
+                raise(ValueError)
             float(textboxValue)
+            bruttoplot.append(float(textboxValue))
             self.listwidget.insertItem(0, textboxValue)
             self.textbox.clear()
         except ValueError:
@@ -77,13 +86,15 @@ class App(QMainWindow):
 
 
     def on_click_calculate(self):
+        self.listwidget2.clear()
         list=[]
         for x in range(self.listwidget.count()):
             list.append(float(self.listwidget.item(x).text()))
+        list.reverse()
         for l in list:
-            self.listwidget2.insertItem(0, scraper.netto(l))
-
-        print(list)
+            temp = scraper.netto(l)
+            nettoplot.append(float(temp))
+            self.listwidget2.insertItem(0, temp)
         self.calculated=True
 
     def on_click_graph(self):
@@ -102,18 +113,52 @@ class GraphWindow(App):
 
     def initUI(self):
         self.setWindowTitle("wykres")
-        self.setGeometry(600, self.top, 400, 440)
+        self.setGeometry(600, self.top, 600, 440)
 
         self.button = QPushButton('zamknij', self)
-        self.button.move(150, 400)
+        self.button.move(250, 400)
         self.button.clicked.connect(self.close)
+
+        m = PlotCanvas(self, width=6, height=4)
+        m.move(0, 0)
 
     def close(self):
         self.hide()
+
+class PlotCanvas(FigureCanvas):
+
+    def __init__(self, parent=None, width=5, height=4, dpi=100):
+        fig = Figure(figsize=(width, height), dpi=dpi)
+
+
+        FigureCanvas.__init__(self, fig)
+        self.setParent(parent)
+
+        FigureCanvas.setSizePolicy(self,
+                QSizePolicy.Expanding,
+                QSizePolicy.Expanding)
+        FigureCanvas.updateGeometry(self)
+        self.plot()
+        for ax in fig.axes:
+            ax.grid(True)
+
+
+    def plot(self):
+
+        brutto = sorted(bruttoplot, key=float)
+        netto = sorted(nettoplot, key=float)
+        ax = self.figure.add_subplot(111)
+        ax.set_xlabel("kwota brutto")
+        ax.set_ylabel("kwota netto")
+        ax.axis([0, max(brutto)+max(brutto)/3, 0, max(netto)+max(netto)/3])
+        ax.plot(brutto, netto, 'b-',brutto, netto, 'ro')
+        self.draw()
 
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     ex = App()
     sys.exit(app.exec_())
+
+
 
