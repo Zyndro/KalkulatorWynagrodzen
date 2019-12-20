@@ -1,5 +1,6 @@
 import sys
 import scraper
+from PyQt5 import QtCore
 from PyQt5.QtWidgets import *
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 import matplotlib
@@ -21,10 +22,12 @@ class App(QMainWindow):
         self.width = 300
         self.height = 400
         self.calculated = False
-        self.initUI()
+        self.cleared = True
+        self.init_ui()
         self.show()
+        self.umowa = 1
 
-    def initUI(self):
+    def init_ui(self):
         self.setWindowTitle(self.title)
         self.setGeometry(self.left, self.top, self.width, self.height)
 
@@ -52,7 +55,7 @@ class App(QMainWindow):
         #inputbox
         self.textbox = QLineEdit(self)
         self.textbox.move(40, 30)
-        self.textbox.resize(210, 20)
+        self.textbox.resize(205, 20)
 
         #button
         self.button = QPushButton('Dodaj kwote', self)
@@ -61,8 +64,11 @@ class App(QMainWindow):
 
         #button1
         self.button1 = QPushButton('Pokaz netto', self)
-        self.button1.move(150, 60)
+        self.button1.move(145, 60)
         self.button1.clicked.connect(self.on_click_calculate)
+
+        self.progress = QProgressBar(self)
+        self.progress.setGeometry(40, 375, 240, 20)
 
         #button3
         self.button3 = QPushButton('Pokaz wykres', self)
@@ -71,38 +77,84 @@ class App(QMainWindow):
 
         #button4
         self.button4 = QPushButton('Wyczysc wszystko', self)
-        self.button4.move(140, 340)
+        self.button4.move(145, 340)
         self.button4.clicked.connect(self.clear_all)
 
+
+        self.cb = QCheckBox('UoP', self)
+        self.cb.move(145, 85)
+        self.cb.toggle()
+        self.cb.stateChanged.connect(self.change_uop)
+
+        self.cb1 = QCheckBox('Uz', self)
+        self.cb1.move(190, 85)
+        self.cb1.stateChanged.connect(self.change_uz)
+
+        self.cb2 = QCheckBox('UoD', self)
+        self.cb2.move(230, 85)
+        self.cb2.stateChanged.connect(self.change_uod)
+
+
+
+
+    def change_uop(self, state):
+        if state == QtCore.Qt.Checked:
+            self.umowa=1
+            self.cb1.setChecked(False)
+            self.cb2.setChecked(False)
+
+    def change_uz(self, state):
+        if state == QtCore.Qt.Checked:
+            self.umowa=2
+            self.cb.setChecked(False)
+            self.cb2.setChecked(False)
+
+    def change_uod(self, state):
+        if state == QtCore.Qt.Checked:
+            self.umowa=3
+            self.cb.setChecked(False)
+            self.cb1.setChecked(False)
+
+
     def on_click_addamount(self):
-        textboxValue = self.textbox.text()
-        try:
-            if textboxValue.startswith(".") or float(textboxValue) < 14.0:
-                raise(ValueError)
-            float(textboxValue)
-            bruttoplot.append(float(textboxValue))
-            self.listwidget.insertItem(0, textboxValue)
-            self.textbox.clear()
-        except ValueError:
-            QMessageBox.question(self, 'Niepoprawna kwota!', "Wprowadź poprawną kwotę", QMessageBox.Ok,QMessageBox.Ok)
-            self.textbox.clear()
+        if self.cleared == True:
+            textboxValue = self.textbox.text()
+            try:
+                if textboxValue.startswith(".") or float(textboxValue) < 14.0:
+                    raise(ValueError)
+                float(textboxValue)
+                bruttoplot.append(float(textboxValue))
+                self.listwidget.insertItem(0, textboxValue)
+                self.textbox.clear()
+            except ValueError:
+                QMessageBox.question(self, 'Niepoprawna kwota!', "Wprowadź poprawną kwotę", QMessageBox.Ok,QMessageBox.Ok)
+                self.textbox.clear()
+        else:
+            QMessageBox.question(self, 'Wyczyść dane', "Wyczuść dane aby ponownie wykonac obliczenia", QMessageBox.Ok, QMessageBox.Ok)
 
     def on_click_calculate(self):
-        self.listwidget2.clear()
-        print(nettoplot)
-        print(bruttoplot)
-        list=[]
-        try:
-            for x in range(self.listwidget.count()):
-                list.append(float(self.listwidget.item(x).text()))
-            list.reverse()
-            for l in list:
-                temp = scraper.netto(l)
-                nettoplot.append(float(temp))
-                self.listwidget2.insertItem(0, temp)
-            self.calculated=True
-        except:
-            QMessageBox.question(self, 'Błąd połączenia', "Sprawdź internet", QMessageBox.Ok, QMessageBox.Ok)
+        if self.cleared == True:
+            self.completed = 0
+            self.listwidget2.clear()
+            list=[]
+            try:
+                for x in range(self.listwidget.count()):
+                    list.append(float(self.listwidget.item(x).text()))
+                list.reverse()
+                for l in list:
+                    temp = scraper.netto(l,self.umowa)
+                    nettoplot.append(float(temp))
+                    self.listwidget2.insertItem(0, temp)
+                    self.completed += 100/len(list)
+                    self.progress.setValue(self.completed)
+                self.calculated=True
+                self.cleared = False
+            except:
+                QMessageBox.question(self, 'Błąd połączenia', "Sprawdź internet", QMessageBox.Ok, QMessageBox.Ok)
+        else:
+            QMessageBox.question(self, 'Wyczyść dane', "Wyczuść dane aby ponownie wykonac obliczenia", QMessageBox.Ok, QMessageBox.Ok)
+
+
 
     def on_click_graph(self):
         if self.calculated == True:
@@ -119,6 +171,8 @@ class App(QMainWindow):
         nettoplot.clear()
         nettoplot.append(0.0)
         self.calculated=False
+        self.cleared = True
+        self.completed = 0
         QMessageBox.question(self, 'Wyczyszczono', "wyczyszczono!", QMessageBox.Ok, QMessageBox.Ok)
 
 
@@ -127,7 +181,7 @@ class GraphWindow(App):
     def __init__(self):
         super().__init__()
 
-    def initUI(self):
+    def init_ui(self):
         self.setWindowTitle("wykres")
         self.setGeometry(600, self.top, 600, 440)
 

@@ -1,9 +1,11 @@
 from bs4 import BeautifulSoup
 import requests
 import re
+import time
 
 
-def netto(brutto):
+def netto(brutto,rodzaj):
+    umowa=rodzaj
     brutto=str(brutto)
     with requests.Session() as c:
         table=[]
@@ -14,19 +16,27 @@ def netto(brutto):
             for table_data in soup.find_all('span', {'class': 'value smaller'}):
                 table.append(table_data)
 
-            netto=table[0]
+            if umowa == 1:
+                netto=table[0]
+            if umowa == 2:
+                netto=table[1]
+            if umowa == 3:
+                netto=table[2]
+
             output = re.findall('\d+', str(netto))
             output1 = "".join(output)
+            #wait between requests
+            time.sleep(2.5)
         else:
             raise requests.HTTPError
 
     return(output1)
 
-#Przekazano formularz w niepoprawny sposób(nie mogę określic poprawnego sposobu)
 '''
 def netto1(brutto):
     headers = {
             "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.79 Safari/537.36",
+
             }
     
     url = "https://wynagrodzenia.pl/kalkulator-wynagrodzen"
@@ -46,7 +56,7 @@ def netto1(brutto):
                 "sedlak_calculator[calculateWay]": "gross",
                 "sedlak_calculator[earnings]": str(brutto),
                 "sedlak_calculator[year]": "2019",
-                "sedlak_calculator[mandateModels]": "otherCompany",
+                "sedlak_calculator[mandateModels]": "otherCompany1",
                 "sedlak_calculator[theSameCity]": "1",
                 "sedlak_calculator[freeCost]": "1",
                 "sedlak_calculator[constantEarnings]": "1",
@@ -82,12 +92,15 @@ def netto1(brutto):
                 "sedlak_calculator[_token]": str(csrf)
                 }
 
-    response = requests.post(url2, headers=headers, data=payload, allow_redirects=True)
+
+
+    response = requests.post(url2, data=payload, headers=headers,  allow_redirects=True)
+    print(response.encoding)
     print(response.text)
     print(payload)
     with open("output1.html", "w") as file:
        file.write(response.text)
 
-netto1(2550)
 
+netto1(2550)
 '''
