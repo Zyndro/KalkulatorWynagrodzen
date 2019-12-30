@@ -12,6 +12,7 @@ bruttoplot = [0]
 nettoplot = [0]
 
 
+
 class App(QMainWindow):
 
     def __init__(self):
@@ -26,6 +27,8 @@ class App(QMainWindow):
         self.init_ui()
         self.show()
         self.umowa = 1
+        #1=pracuj.pl else wynagrodzenia.pl
+        self.source = 1
 
     def init_ui(self):
         self.setWindowTitle(self.title)
@@ -80,7 +83,7 @@ class App(QMainWindow):
         self.button4.move(145, 340)
         self.button4.clicked.connect(self.clear_all)
 
-
+        #checkboxy
         self.cb = QCheckBox('UoP', self)
         self.cb.move(145, 85)
         self.cb.toggle()
@@ -93,9 +96,6 @@ class App(QMainWindow):
         self.cb2 = QCheckBox('UoD', self)
         self.cb2.move(230, 85)
         self.cb2.stateChanged.connect(self.change_uod)
-
-
-
 
     def change_uop(self, state):
         if state == QtCore.Qt.Checked:
@@ -142,19 +142,23 @@ class App(QMainWindow):
                     list.append(float(self.listwidget.item(x).text()))
                 list.reverse()
                 for l in list:
-                    temp = scraper.netto(l,self.umowa)
+                    #wybór kalkulatora online jeszcze nie zaimplementowany
+                    if self.source == 1:
+                        temp = scraper.netto(l,self.umowa)
+                    else:
+                        #tylko umowa o prace
+                        temp = scraper.netto1(l)
                     nettoplot.append(float(temp))
                     self.listwidget2.insertItem(0, temp)
                     self.completed += 100/len(list)
                     self.progress.setValue(self.completed)
                 self.calculated=True
                 self.cleared = False
-            except:
+            except Exception as e:
+                print(e)
                 QMessageBox.question(self, 'Błąd połączenia', "Sprawdź internet", QMessageBox.Ok, QMessageBox.Ok)
         else:
             QMessageBox.question(self, 'Wyczyść dane', "Wyczuść dane aby ponownie wykonac obliczenia", QMessageBox.Ok, QMessageBox.Ok)
-
-
 
     def on_click_graph(self):
         if self.calculated == True:
