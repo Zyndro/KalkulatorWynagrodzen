@@ -2,8 +2,11 @@ from bs4 import BeautifulSoup
 import requests
 import re
 
-#get request
-def netto(brutto,rodzaj):
+
+def netto_pracuj(brutto,rodzaj):
+    """
+    Get request
+    """
     umowa=rodzaj
     brutto=str(brutto)
     with requests.Session() as c:
@@ -14,35 +17,31 @@ def netto(brutto,rodzaj):
             soup = BeautifulSoup(r.content, 'html5lib')
             for table_data in soup.find_all('span', {'class': 'value smaller'}):
                 table.append(table_data)
-
             if umowa == 1:
                 netto=table[0]
             if umowa == 2:
                 netto=table[1]
             if umowa == 3:
                 netto=table[2]
-
             output = re.findall('\d+', str(netto))
             output1 = "".join(output)
-
-
         else:
             raise requests.HTTPError
-
-
     return(output1)
 
-#post request
-def netto1(brutto):
+
+def netto_wynagrodzenia(brutto):
+    """
+        Post request
+    """
     headers = {
-            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.79 Safari/537.36",
-            }
-    
+                "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.79 Safari/537.36",
+               }
     url = "https://wynagrodzenia.pl/kalkulator-wynagrodzen"
     url2 = "https://wynagrodzenia.pl/kalkulator-wynagrodzen/wyniki"
     table = []
     with requests.Session() as c:
-        #csrf token dla requesta
+        # csrf token dla requesta
         r = c.get(url, headers=headers)
         if r.status_code == 200:
             soup = BeautifulSoup(r.content, 'html5lib')
@@ -50,8 +49,7 @@ def netto1(brutto):
                 table.append(str(table_data))
                 m = re.findall('"(.*?)"', table[0])
             csrf = m[3]
-            print(csrf)
-
+            # post form
             payload = {
                         "sedlak_calculator[contractType]": "work",
                         "sedlak_calculator[calculateWay]": "gross",
@@ -91,12 +89,9 @@ def netto1(brutto):
                         "nonwork_accidentPercent": "1.67",
                         "sedlak_calculator[save]": "",
                         "sedlak_calculator[_token]": csrf
-                        }
-
+                       }
             response = c.post(url2, data=payload, headers=headers)
             if response.status_code == 200:
-                with open("output1.html", "w") as file:
-                   file.write(response.text)
                 table = []
                 soup = BeautifulSoup(response.content, 'html5lib')
                 for table_data in soup.find_all('div', {'class': 'col-md-3 col-sm-6'}):
@@ -106,18 +101,13 @@ def netto1(brutto):
                 output = "".join(output.split())
                 output = output.replace(',', '.')
                 output = re.findall('\d+', output)
-
             else:
                 raise requests.HTTPError
-
         else:
             raise requests.HTTPError
-
-        return (output[0])
-
+        return output[0]
 
 
-
-#testy
+# testy
 if __name__ == "__main__":
-    netto1(2550)
+    print(netto_wynagrodzenia(2550))
