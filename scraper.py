@@ -2,7 +2,7 @@ from bs4 import BeautifulSoup
 import requests
 import re
 
-
+#get request
 def netto(brutto,rodzaj):
     umowa=rodzaj
     brutto=str(brutto)
@@ -32,7 +32,7 @@ def netto(brutto,rodzaj):
 
     return(output1)
 
-
+#post request
 def netto1(brutto):
     headers = {
             "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.79 Safari/537.36",
